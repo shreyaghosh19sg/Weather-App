@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shreya's Weather App</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #ffccdc, #ff99aa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      animation: bgPulse 5s infinite alternate;
+    }
+
+    @keyframes bgPulse {
+      0% {
+        background: linear-gradient(135deg, #ffd1e3, #ffb6c1);
+      }
+      100% {
+        background: linear-gradient(135deg, #ff99aa, #ffc0cb);
+      }
+    }
+
+    .weather-app {
+      background: #fff;
+      border-radius: 15px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 25px rgba(255, 105, 135, 0.3);
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      color: #e91e63;
+      font-size: 1.9rem;
+      margin-bottom: 20px;
+    }
+
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    input {
+      padding: 12px;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 2px solid #f48fb1;
+      transition: box-shadow 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 12px rgba(233, 30, 99, 0.4);
+    }
+
+    button {
+      padding: 12px;
+      background: #e91e63;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+      background: #c2185b;
+      transform: scale(1.03);
+    }
+
+    #weather-info {
+      display: none;
+      animation: slideUp 0.8s ease-in-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #weather-info img {
+      width: 80px;
+      margin: 10px 0;
+    }
+
+    #weather-info p {
+      margin: 6px 0;
+      font-size: 1rem;
+      color: #444;
+    }
+
+    footer {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    footer a {
+      color: #e91e63;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .weather-app {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      input, button {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="weather-app">
+    <h1>🌸 Shreya's Weather App</h1>
+    <div class="input-container">
+      <input type="text" id="location" placeholder="Enter City Name" />
+      <button id="search-btn">Search</button>
+      <button id="current-location-btn">📍 Use My Location</button>
+    </div>
+    <div id="weather-info">
+      <h2 id="city-name"></h2>
+      <img id="icon" alt="Weather Icon" />
+      <p id="temperature"></p>
+      <p id="condition"></p>
+      <p id="details"></p>
+    </div>
+    <footer>
+      <p>Powered by <a href="https://www.weatherapi.com/" target="_blank">Weather API</a> | Made by <b>Shreya ❤️</b></p>
+    </footer>
+  </div>
+
+  <script>
+    const API_KEY = "7ccdbf30f16d4ff19e145358242112"; // Replace with your WeatherAPI key
+    const searchBtn = document.getElementById("search-btn");
+    const currentLocationBtn = document.getElementById("current-location-btn");
+    const locationInput = document.getElementById("location");
+    const cityName = document.getElementById("city-name");
+    const temperature = document.getElementById("temperature");
+    const condition = document.getElementById("condition");
+    const icon = document.getElementById("icon");
+    const details = document.getElementById("details");
+    const weatherInfo = document.getElementById("weather-info");
+
+    searchBtn.addEventListener("click", () => {
+      const location = locationInput.value.trim();
+      if (location) fetchWeather(location);
+      else alert("Please enter a valid city name.");
+    });
+
+    currentLocationBtn.addEventListener("click", () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            fetchWeatherByCoords(latitude, longitude);
+          },
+          () => alert("Location access denied or unavailable.")
+        );
+      } else {
+        alert("Geolocation is not supported by your browser.");
+      }
+    });
+
+    function fetchWeather(location) {
+      const url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${location}`;
+      fetch(url)
+        .then((response) => {
+          if (!response.ok) throw new Error("City not found");
+          return response.json();
+        })
+        .then((data) => displayWeather(data))
+        .catch(() => alert("Unable to fetch weather for that location."));
+    }
+
+    function fetchWeatherByCoords(lat, lon) {
+      const url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${lat},${lon}`;
+      fetch(url)
+        .then((response) => {
+          if (!response.ok) throw new Error("Failed to fetch");
+          return response.json();
+        })
+        .then((data) => displayWeather(data))
+        .catch(() => alert("Error fetching current location weather."));
+    }
+
+    function displayWeather(data) {
+      weatherInfo.style.display = "block";
+      cityName.textContent = `${data.location.name}, ${data.location.country}`;
+      temperature.textContent = `Temperature: ${data.current.temp_c}°C`;
+      condition.textContent = `Condition: ${data.current.condition.text}`;
+      icon.src = `https:${data.current.condition.icon}`;
+      details.textContent = `Humidity: ${data.current.humidity}% | Wind: ${data.current.wind_kph} km/h`;
+    }
+  </script>
+</body>
+</html>
